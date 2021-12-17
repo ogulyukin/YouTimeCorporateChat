@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace TCPServer
 {
@@ -12,17 +11,19 @@ namespace TCPServer
         Message m_Msg;
         int m_ConnectionNumber;
         TcpClient m_Connection;
+        int sendeId;
 
         public NewConnection(Message msg, int number)
         {
             m_Msg = msg;
             m_ConnectionNumber = number;
+            sendeId = 0;
         }
 
         public void ProceedNewConnection(TcpClient connection)
         {
             m_Connection = connection;
-            m_Msg(MessageType.info, $"Accept new Connection {m_ConnectionNumber} in {Thread.CurrentThread.GetHashCode()}...");           
+            m_Msg(MessageType.info, sendeId, 0, $"Accept new connection: {m_ConnectionNumber} in thread: {Thread.CurrentThread.GetHashCode()}...");           
             var buffer = new byte[256];
             var data = new List<byte>();
             string msg = "";
@@ -39,7 +40,7 @@ namespace TCPServer
                     }
                     catch (Exception exc)
                     {
-                        m_Msg(MessageType.error, exc.Message);
+                        m_Msg(MessageType.error, sendeId, 0, exc.Message);
                         isConnected = false;
                         break;
                     }
@@ -49,9 +50,9 @@ namespace TCPServer
                 {
                     var t = data.ToArray();
                     msg = Encoding.Unicode.GetString(t, 0, t.Length);
-                    m_Msg(MessageType.message, $"Connection {m_ConnectionNumber} Client: {msg}");
+                    m_Msg(MessageType.message, sendeId, 0, $"Connection: {m_ConnectionNumber} Client: {msg}");
                     connection.GetStream().Write(Encoding.Unicode.GetBytes("Put something here!!!"));
-                    m_Msg(MessageType.message, $"Connection {m_ConnectionNumber} Server: Put something here!!!");
+                    m_Msg(MessageType.message, sendeId, 0, $"Connection: {m_ConnectionNumber} Server: Put something here!!!");
                     data.Clear();
                 }
             }
@@ -60,7 +61,7 @@ namespace TCPServer
 
         private void ClosingConnection()
         {
-            m_Msg(MessageType.info, $"Connection {m_ConnectionNumber} Closing connection...");
+            m_Msg(MessageType.info, sendeId, 0, $"Connection {m_ConnectionNumber} in thread: {Thread.CurrentThread.GetHashCode()} Closing connection...");
             m_Connection.Close();
         }
     }

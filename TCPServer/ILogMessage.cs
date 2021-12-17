@@ -26,6 +26,6 @@ namespace TCPServer
     public interface ILogMessage
     {
         public bool StartLog();
-        public void AddMessage(MessageType type, string message);
+        public void AddMessage(MessageType type, int senderId, int chatId, string message);
     }
 }
