@@ -10,7 +10,7 @@ using System.Collections.Generic;
 
 namespace TCPServer
 {
-    public delegate void Message(MessageType type, string msg);
+    public delegate void Message(MessageType type, int senderId, int chatId, string msg);
 
     public class TCPServer
     {
@@ -18,11 +18,10 @@ namespace TCPServer
         private TcpListener m_Listener;
         int port;
         private int m_ConnectionCount = 0;
-        private int m_MaxConnectionCount = 5;
 
-        public TCPServer(Message msg, int port)
+        public TCPServer(Message log, int port)
         {
-            m_Msg = msg;
+            m_Msg = log;
             this.port = port;
         }
 
@@ -37,11 +36,11 @@ namespace TCPServer
             {
                 m_Listener = new TcpListener(IPAddress.Any, port);
                 m_Listener.Start();
-                m_Msg(MessageType.info, "Begin listening...");
+                m_Msg(MessageType.info, 0, 0, "Begin listening...");
             }
             catch (Exception exc)
             {
-                m_Msg(MessageType.error, exc.Message);
+                m_Msg(MessageType.error, 0, 0, exc.Message);
                 return;
             }
 

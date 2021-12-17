@@ -13,10 +13,16 @@ namespace TCPServer
             return true;
         }
 
-        public void AddMessage(MessageType type, string message)
+        public void AddMessage(MessageType type, int senderId, int chatId, string message)
         {
             ChangeConsoleColor(type);
-            Console.WriteLine(message);
+            if (type == MessageType.message)
+            {
+                Console.WriteLine($"{DateTime.UtcNow} Sender: {senderId} Chat: {chatId} Message: {message}");
+            }else
+            {
+                Console.WriteLine($"{DateTime.UtcNow} {type}: {message}");
+            }
             Console.ResetColor();
         }
 
