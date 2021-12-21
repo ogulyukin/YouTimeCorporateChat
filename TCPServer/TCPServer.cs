@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Text.RegularExpressions;
 using System.Net;
 using System.Net.Sockets;
-using System.Collections.Generic;
-
+using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography;
 
 namespace TCPServer
 {
@@ -16,25 +13,25 @@ namespace TCPServer
     {
         private Message m_Msg;
         private TcpListener m_Listener;
-        int port;
-        private int m_ConnectionCount = 0;
+        private int m_Port;
+        private int m_ConnectionCount;
+        private X509Certificate2 m_ServerCertificate;
 
         public TCPServer(Message log, int port)
         {
             m_Msg = log;
-            this.port = port;
+            this.m_Port = port;
+            m_ServerCertificate = null;
         }
 
-        ~TCPServer()
-        {
-            if (m_Listener != null) m_Listener.Stop();
-        }
-        
-        public void StartServer()
+       
+        public void StartServer(string certificate)
         {
             try
             {
-                m_Listener = new TcpListener(IPAddress.Any, port);
+                m_ServerCertificate = new X509Certificate2(certificate);
+                m_Msg(MessageType.info, 0, 0, $"Certificate loaded: {m_ServerCertificate.ToString(true)}");
+                m_Listener = new TcpListener(IPAddress.Any, m_Port);
                 m_Listener.Start();
                 m_Msg(MessageType.info, 0, 0, "Begin listening...");
             }
@@ -51,7 +48,7 @@ namespace TCPServer
 
                 Task task = new(() =>
                 {
-                    connection.ProceedNewConnection(client);
+                    connection.ProceedNewConnection(client, m_ServerCertificate);
                 });
                 m_ConnectionCount++;
                 task.Start();

@@ -23,7 +23,7 @@ namespace TCPServer
 
         public void StartServer()
         {
-            m_Server.StartServer();
+            m_Server.StartServer("1.cer");
         }
 
         private void Logger(MessageType type, int senderId, int chatId, string message)

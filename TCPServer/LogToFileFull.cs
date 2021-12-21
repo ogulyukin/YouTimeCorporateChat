@@ -10,8 +10,7 @@ namespace TCPServer
     class LogToFileFull : ILogMessage
     {      
         public void AddMessage(MessageType type, int senderId, int chatId, string message)
-        {
-            FileStream fs = null;
+        { 
             try
             {
                 using (StreamWriter writer = new StreamWriter(new FileStream("log.txt", FileMode.Append), Encoding.UTF8, 512, false))

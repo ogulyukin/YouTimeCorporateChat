@@ -1,0 +1,39 @@
+﻿<Window x:Class="ChatClient.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ChatClient"
+        mc:Ignorable="d"
+        Title="Chat client" Height="500" Width="300">
+    <Grid Margin="1">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="10*"/>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="1*"/>
+        </Grid.RowDefinitions>
+        <TextBox x:Name="IPadressBlock" Text="Введите IP адресс" Foreground="Gray" Grid.Column="0" Grid.Row="0" FontSize="20" TextAlignment="Center" VerticalAlignment="Center" GotFocus="IPadressBlock_GotFocus" LostFocus="IPadressBlock_LostFocus"/>
+        <TextBox x:Name="PortBlock" Text="Введите номер порта" Foreground="Gray" Grid.Column="0" Grid.Row="1" FontSize="20" TextAlignment="Center" VerticalAlignment="Center" GotFocus="PortBlock_GotFocus" LostFocus="PortBlock_LostFocus"/>
+        <Button x:Name="GoButton" Content="Соединиться" Grid.Column="0" Grid.Row="2" Margin="2" FontSize="20" FontWeight="Bold" Click="GoButton_Click"/>
+        <ListBox x:Name="MyMessageBox" Grid.Column="0" Grid.Row="3" VerticalContentAlignment="Top" HorizontalContentAlignment="Stretch">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="0.2" Background="{Binding BackColor}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding Message}"/>                      
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <TextBox x:Name="NewMessageBlock" Text="Введите сообщение" Foreground="Gray" Grid.Column="0" Grid.Row="4" FontSize="20" TextAlignment="Center" VerticalAlignment="Center" GotFocus="NewMessageBlock_GotFocus" LostFocus="NewMessageBlock_LostFocus"/>
+        <Button x:Name="SendButton" Content="Отправить" Grid.Column="0" Grid.Row="5" Margin="2" FontSize="20" FontWeight="Bold" Click="SendButton_Click" IsDefault="True"/>
+    </Grid>
+</Window>
