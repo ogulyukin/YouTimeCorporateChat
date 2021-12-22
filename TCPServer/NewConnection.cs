@@ -66,7 +66,6 @@ namespace TCPServer
                 {
                     try
                     {
-                        //connection.GetStream().Read(buffer);
                         sslStream.Read(buffer, 0, buffer.Length);
                         data.AddRange(buffer);
                         Array.Clear(buffer, 0, buffer.Length);

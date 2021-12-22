@@ -1,25 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
+using System.Threading;
 
 
 namespace ChatClient
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
+        public delegate void ShowNewMessages();
+
         ServerConnector m_Connector;
         List<MessageItem> m_ChatMsgs;
+        Timer m_Timer;
 
         public MainWindow()
         {
@@ -27,7 +21,37 @@ namespace ChatClient
             NewMessageBlock.IsEnabled = false;
             m_Connector = new();
             m_ChatMsgs = new();
+            TimerCallback callback = new(OnTimer);
+            m_Timer = new(callback);
         }
+
+        public void OnTimer(object obj)
+        {
+            try
+            {
+                Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.DataBind,
+                    new ShowNewMessages(GetNewMessages));
+            }
+            catch (Exception exc)
+            {
+                Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.DataBind,
+                    new ShowNewMessages(GetErrorGettingData));
+            }
+        }
+
+        private void GetNewMessages()
+        {
+            if (!m_Connector.isConnectedToServer()) return;
+            m_ChatMsgs.Add(new(m_Connector.GetNewMessages(), new SolidColorBrush(Color.FromRgb(255, 0, 0))));
+            RefreshMessageBox();
+        }
+
+        private void GetErrorGettingData()
+        {
+            m_ChatMsgs.Add(new("Uncnoun error", new SolidColorBrush(Color.FromRgb(255, 0, 0))));
+            RefreshMessageBox();
+        }
+
 
         private void GoButton_Click(object sender, RoutedEventArgs e)
         {
@@ -50,7 +74,9 @@ namespace ChatClient
             if (resultmesg == "Соединение установлено")
             {
                 NewMessageBlock.IsEnabled = true;
-            }                
+            }
+
+            m_Timer.Change(3000, 3000);
         }
 
         private void SendButton_Click(object sender, RoutedEventArgs e)
@@ -61,8 +87,8 @@ namespace ChatClient
                 MessageBox.Show("Не установлено соединение\n с сервером", "Ошибка");
                 return;
             }
-            m_ChatMsgs.Add(new(NewMessageBlock.Text, new SolidColorBrush(Color.FromRgb(0, 255, 0)))); 
-            m_ChatMsgs.Add(new(m_Connector.SendMessage(NewMessageBlock.Text), new SolidColorBrush(Color.FromRgb(255,0,0))));
+            m_ChatMsgs.Add(new(NewMessageBlock.Text, new SolidColorBrush(Color.FromRgb(0, 255, 0))));
+            m_Connector.SendMessage(NewMessageBlock.Text);
             RefreshMessageBox();
             NewMessageBlock.Text = "";
         }
