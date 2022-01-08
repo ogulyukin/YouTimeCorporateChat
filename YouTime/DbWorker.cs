@@ -28,6 +28,7 @@ namespace ChatClient
                     result.Add(chat);
                 }
             }
+            db.Close();
             return result;
         }
 
@@ -40,12 +41,14 @@ namespace ChatClient
             var sql = $"INSERT INTO 'Chat_Tab'(Name) VALUES ('{name}');";
             var query02 = new SqliteCommand(sql, db);
             query02.ExecuteNonQuery();
+            db.Close();
             return GetChatId(name, db);
         }
 
         private static int GetChatId(string name, SqliteConnection db)
         {
             int result = 0;
+            db.Open();
             var sql = $"SELECT id FROM 'Chat_Tab' WHERE name = '{name}'";
             using var query = new SqliteCommand(sql, db);
             using var res = query.ExecuteReader();
@@ -54,6 +57,7 @@ namespace ChatClient
                 res.Read();
                 result = res.GetInt32("id");
             }
+            db.Close();
             return result;
         }
 
@@ -79,6 +83,7 @@ namespace ChatClient
                     result.Add(message);
                 }
             }
+            db.Close();
             return result;
         }
 
@@ -87,9 +92,14 @@ namespace ChatClient
             using var db = new SqliteConnection(connection);
             db.Open();
             var sql = $"INSERT INTO 'Message_Tab'(DateTime, SenderId, ChatId, Message) VALUES ('{dateTime}','{senderId}', '{chatId}', '{message}');";
+            var query01 = new SqliteCommand(sql, db);
+            query01.ExecuteNonQuery();
+            sql = "SELECT last_insert_rowid() from Message_Tab";
             var query02 = new SqliteCommand(sql, db);
-            query02.ExecuteNonQuery();
-            return GetChatId(message, db);
+            var res = query02.ExecuteScalar();
+            bool resId = int.TryParse(res.ToString(), out int resultId);
+            db.Close();
+            return resId ? resultId : -1;
         }
 
         public static List<DataModelContact> getContactList(string connection)
@@ -123,9 +133,14 @@ namespace ChatClient
             int result = GetChatId(name, db);
             if (result != 0) return result;
             var sql = $"INSERT INTO 'Chat_Tab'(Name) VALUES ('{name}');";
+            var query01 = new SqliteCommand(sql, db);
+            query01.ExecuteNonQuery();
+            sql = "SELECT last_insert_rowid() from Message_Tab";
             var query02 = new SqliteCommand(sql, db);
-            query02.ExecuteNonQuery();
-            return GetChatId(name, db);
+            var res = query02.ExecuteScalar();
+            bool resId = int.TryParse(res.ToString(), out int resultId);
+            db.Close();
+            return resId ? resultId : -1;
         }
     }
 }

@@ -7,39 +7,52 @@ using System.Net.Sockets;
 using System.Text;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
+using ChatClient;
 
-namespace ChatClient
+namespace Networking
 {
-    public class ServerConnector
-    { 
-        private TcpClient client;
-        SslStream sslStream;
-        private static Hashtable _certificateErrors = new Hashtable();
+    public class TCPClient
+    {
+        public delegate void Message(MessageType type, int senderId, int chatId, string msg);
+        private Message m_Msg;
+        private TcpClient m_Connection;
+        private SslStream m_SslStream;
+        private static Hashtable m_CertificateErrors = new Hashtable();
+        private int m_UserId = 0;
 
-        public string ConnectToServer(string ip, int port)
+        public TCPClient(Message msg)
+        {
+            m_Msg = msg;
+        }
+
+        public void ConnectToServer(Configuration.Config config, string username, string password)
         {
             try
             {
-                var ipServer = new IPEndPoint(IPAddress.Parse(ip), port);
-                client = new();
-                client.Connect(ipServer);
+                var ipServer = new IPEndPoint(IPAddress.Parse(config.GetServerIP()), config.GetServerPort());
+                m_Connection = new();
+                m_Connection.Connect(ipServer);
             }
             catch (Exception exc)
             {
-                return exc.Message;
+                m_Msg(MessageType.error, 0, 0, $"ERROR:{exc.Message}");
+                return;
             }
 
             try
             {
-                sslStream = new SslStream(client.GetStream(), true, ValidateServerCertificate, null);
-                sslStream.AuthenticateAsClient("Host name with SSL cert");
+                m_SslStream = new SslStream(m_Connection.GetStream(), true, ValidateServerCertificate, null);
+                m_SslStream.AuthenticateAsClient("Host name with SSL cert");
             }catch(Exception exc)
             {
-                client.Close();
-                return exc.Message;
+                m_Connection.Close();
+                m_Msg(MessageType.error, 0, 0, $"ERROR:{exc.Message}");
+                return;
             }
-
-            return "Соединение установлено";
+            m_Msg(MessageType.info, 0, 0, "System: Connection to Sever established.");
+            WaitForNewMessages();
+            CloseConnection();
+            return;
         }
 
         private bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
@@ -49,10 +62,10 @@ namespace ChatClient
 
         public void SendMessage(string message)
         {
-            sslStream.WriteAsync(Encoding.Unicode.GetBytes(message));           
+            m_SslStream.WriteAsync(Encoding.Unicode.GetBytes(message));           
         }
 
-        public async string GetNewMessages()
+        public string GetNewMessages()
         {
             var buffer = new byte[256];
             var data = new List<byte>();
@@ -60,9 +73,9 @@ namespace ChatClient
             CancellationToken token = (source = new()).Token;
             do
             {
-                sslStream.Read(buffer);
+                m_SslStream.Read(buffer);
                 data.AddRange(buffer);
-            } while (client.Available > 0);
+            } while (m_Connection.Available > 0);
 
             byte[] dataArray = data.ToArray();
 
@@ -71,15 +84,15 @@ namespace ChatClient
 
         public bool isConnectedToServer()
         {
-            return client != null && client.Connected;
+            return m_Connection != null && m_Connection.Connected;
         }
 
         private void CloseConnection()
         {
-            client.Close();
+            m_Connection.Close();
         }
-
-        private void WaitForNewMessages(SslStream sslStream)
+        
+        private void WaitForNewMessages()
         {
             bool isConnected = m_Connection.Connected;
             var buffer = new byte[256];
@@ -92,7 +105,7 @@ namespace ChatClient
                 {
                     try
                     {
-                        sslStream.Read(buffer, 0, buffer.Length);
+                        m_SslStream.Read(buffer, 0, buffer.Length);
                         data.AddRange(buffer);
                         Array.Clear(buffer, 0, buffer.Length);
                     }
@@ -100,13 +113,13 @@ namespace ChatClient
                     {
                         if (exc.HResult != -2146232800)
                         {
-                            m_Msg(MessageType.error, sendeId, 0, exc.Message);
+                            m_Msg(MessageType.error, m_UserId, 0, exc.Message);
                             isConnected = false;
                             break;
                         }
                         else
                         {
-                            if (m_Connection.Connected) SendNewMessages(sslStream);
+                            if (m_Connection.Connected) SendNewMessages();
                         }
                     }
 
@@ -116,23 +129,17 @@ namespace ChatClient
                 {
                     var dataArray = data.ToArray();
                     msg = Encoding.Unicode.GetString(dataArray, 0, dataArray.Length);
-                    m_Msg(MessageType.message, sendeId, 0, $"Connection: {m_ConnectionNumber} Client: {msg}");
+                    m_Msg(MessageType.message, m_UserId, 0, $"{msg}");
                     data.Clear();
                 }
             }
-            ClosingConnection();
+            CloseConnection();
         }
-
-        private void SendNewMessages(SslStream sslStream)
+        
+        private void SendNewMessages()
         {
-            sslStream.WriteAsync(Encoding.Unicode.GetBytes("New messages from server"));
-            m_Msg(MessageType.info, 0, 0, $"Connection: {m_ConnectionNumber} Server: new messages sent");
-        }
-
-        private void ClosingConnection()
-        {
-            m_Msg(MessageType.info, sendeId, 0, $"Connection {m_ConnectionNumber} in thread: {Thread.CurrentThread.GetHashCode()} Closing connection...");
-            m_Connection.Close();
+            m_SslStream.WriteAsync(Encoding.Unicode.GetBytes("New messages from server"));
+            m_Msg(MessageType.info, 0, 0, $"Connection:  Server: new messages sent");
         }
 
     }
