@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Media;
 using Networking;
 
@@ -18,16 +19,19 @@ namespace ChatClient
 
     public class MainModule
     {
+        public delegate void Updater();
         private Configuration.ConfigManager m_CManager;
         private List<MessageItem> m_ChatMsgs;
         private List<DataModelContact> m_ContactList;
-        private Action messageCallBack;
+        private Updater messageCallBack;
         private int m_CurrentChat;
         private int m_CurentUserId;
         List<DataModelChat> m_ChatList;
         private const string m_Connection = "Data Source=data.sqlite;Mode=ReadWrite;";
+        private Queue<NetworkMessageItem> m_UserMessagesQueue;
+        private Queue<NetworkMessageItem> m_ServerMessagesQueue;
 
-        public MainModule(List<MessageItem> chatMsgs, Action refreshMsg)
+        public MainModule(List<MessageItem> chatMsgs, Updater refreshMsg)
         {
             m_ChatMsgs = chatMsgs;
             m_CManager = new(Messager);
@@ -40,16 +44,35 @@ namespace ChatClient
                 RealName = "System",
                 BackColor = new(Color.FromRgb(0, 255, 171))
             });
+            m_UserMessagesQueue = new();
+            m_ServerMessagesQueue = new();
+            //TimerCallback callback = new TimerCallback(TimerMethod);
+            //Timer timer = new(callback); //создаем объект таймера
+            //timer.Change(1000, 2000); //через 1 сек каждые 2 сек
             //m_ChatList = DbWorker.getChatList(//TODO Add string connection here );
         }
 
         public void StartNetwork(string username, string password)
         {
-            var network = new TCPClient(Messager);
+            var network = new TCPClient(m_UserMessagesQueue, m_ServerMessagesQueue, Messager);
             Task task = new(() =>
             {
                 network.ConnectToServer(m_CManager.AppConfig, username, password);
             });
+            task.Start();
+        }
+
+        public void addUserMessage(string message)
+        {
+            //if (m_CurentUserId == 0) return; //Uncoment it
+            var msg = new NetworkMessageItem()
+            {
+                type = NetworkMessageType.message,
+                ChatId = m_CurrentChat,
+                SenderId = m_CurentUserId,
+                Message = message
+            };
+            m_UserMessagesQueue.Enqueue(msg);
         }
 
         public string GetCurrentUserNick()
@@ -108,7 +131,9 @@ namespace ChatClient
                 m_ChatMsgs.Add(new MessageItem("System", $"ERROR: Unable to access database!!!",
                 SetMessageColor(MessageType.error), messageTime));
             }
-            messageCallBack();
+
+            //messageCallBack();/*
+            
         }
 
         private SolidColorBrush SetMessageColor(MessageType type)
@@ -133,6 +158,17 @@ namespace ChatClient
                     return c;
             }
             return null;
-        } 
+        }
+
+        public void TimerMethod()
+        {
+            while (m_ServerMessagesQueue.Count > 0)
+            {
+                var msg = m_ServerMessagesQueue.Dequeue();
+                Messager(MessageType.message, msg.SenderId, msg.ChatId, msg.Message);
+            }
+            //Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.DataBind,
+            //        new Updater(messageCallBack));
+        }
     }
 }

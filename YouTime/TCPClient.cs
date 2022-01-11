@@ -7,6 +7,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
 using ChatClient;
 
 namespace Networking
@@ -19,14 +21,22 @@ namespace Networking
         private SslStream m_SslStream;
         private static Hashtable m_CertificateErrors = new Hashtable();
         private int m_UserId = 0;
+        private Queue<NetworkMessageItem> m_UserMessagesQueue;
+        private Queue<NetworkMessageItem> m_ServerMessagesQueue;
 
-        public TCPClient(Message msg)
+        public TCPClient(Queue<NetworkMessageItem> userMessagesQueue, Queue<NetworkMessageItem> serverMessagesQueue, Message msg)
         {
+            m_UserMessagesQueue = userMessagesQueue;
+            m_ServerMessagesQueue = serverMessagesQueue;
             m_Msg = msg;
         }
 
         public void ConnectToServer(Configuration.Config config, string username, string password)
         {
+            m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = NetworkMessageType.info, Message = "System: Starting server..." });
+            //Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.DataBind,
+            //new UpdateMessages(m_UpdateMessages));
+
             try
             {
                 var ipServer = new IPEndPoint(IPAddress.Parse(config.GetServerIP()), config.GetServerPort());
@@ -35,7 +45,7 @@ namespace Networking
             }
             catch (Exception exc)
             {
-                m_Msg(MessageType.error, 0, 0, $"ERROR:{exc.Message}");
+                m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = NetworkMessageType.info, Message = $"ERROR:{exc.Message}" });
                 return;
             }
 
@@ -46,10 +56,10 @@ namespace Networking
             }catch(Exception exc)
             {
                 m_Connection.Close();
-                m_Msg(MessageType.error, 0, 0, $"ERROR:{exc.Message}");
+                m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = NetworkMessageType.info, Message = $"ERROR:{exc.Message}" });
                 return;
             }
-            m_Msg(MessageType.info, 0, 0, "System: Connection to Sever established.");
+            m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = NetworkMessageType.info, Message = "System: Connection to Sever established." });
             WaitForNewMessages();
             CloseConnection();
             return;
@@ -58,11 +68,6 @@ namespace Networking
         private bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             return true;
-        }
-
-        public void SendMessage(string message)
-        {
-            m_SslStream.WriteAsync(Encoding.Unicode.GetBytes(message));           
         }
 
         public string GetNewMessages()
@@ -113,7 +118,7 @@ namespace Networking
                     {
                         if (exc.HResult != -2146232800)
                         {
-                            m_Msg(MessageType.error, m_UserId, 0, exc.Message);
+                            m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = NetworkMessageType.info, Message = $"ERROR:{exc.Message}" });
                             isConnected = false;
                             break;
                         }
@@ -122,14 +127,14 @@ namespace Networking
                             if (m_Connection.Connected) SendNewMessages();
                         }
                     }
-
+                    SendNewMessages();
                 } while (m_Connection.Available > 0);
                 isConnected = m_Connection.Connected;
                 if (isConnected)
                 {
                     var dataArray = data.ToArray();
                     msg = Encoding.Unicode.GetString(dataArray, 0, dataArray.Length);
-                    m_Msg(MessageType.message, m_UserId, 0, $"{msg}");
+                    m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = NetworkMessageType.info, Message = $"SERVER:{ msg.Replace('"', ' ') }" });
                     data.Clear();
                 }
             }
@@ -138,9 +143,11 @@ namespace Networking
         
         private void SendNewMessages()
         {
-            m_SslStream.WriteAsync(Encoding.Unicode.GetBytes("New messages from server"));
-            m_Msg(MessageType.info, 0, 0, $"Connection:  Server: new messages sent");
+            while(m_UserMessagesQueue.Count > 0)
+            {
+                var msg = m_UserMessagesQueue.Dequeue();
+                m_SslStream.WriteAsync(Encoding.Unicode.GetBytes($"{msg.SenderId}:{msg.ChatId}:{msg.Message}"));
+            }
         }
-
     }
 }

@@ -3,28 +3,33 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Media;
 using System.Threading;
+using System.Windows.Threading;
 
 namespace ChatClient
 {
     public partial class MainWindow : Window
     {
+        public delegate void MessageUpdater();
         List<MessageItem> m_ChatMsgs;
         MainModule m_MainModule;
 
         public MainWindow()
         {
             InitializeComponent();
-            NewMessageBlock.IsEnabled = false;
             m_ChatMsgs = new();
             m_MainModule = new(m_ChatMsgs, RefreshMessageBox);
-            if(!m_MainModule.StartConfigMagager())
+            if (!m_MainModule.StartConfigMagager())
             {
                 var dialog = new SettingsDialog("127.0.0.1", "8005");
                 dialog.ShowDialog();
                 m_MainModule.AddNewConfig(dialog.ipAdress.Text, dialog.portAdress.Text);
             }
             IPadressBlock.Text = $"Server: {m_MainModule.GetServerAdres()}";
-            ChatName.Text = m_MainModule.GetCurrentChatName();  
+            ChatName.Text = m_MainModule.GetCurrentChatName();
+            DispatcherTimer timer = new DispatcherTimer();
+            timer.Interval = TimeSpan.FromSeconds(2);
+            timer.Tick += timer_Tick;
+            timer.Start();
         }
 
         private void GoButton_Click(object sender, RoutedEventArgs e)
@@ -36,16 +41,8 @@ namespace ChatClient
 
         private void SendButton_Click(object sender, RoutedEventArgs e)
         {
-            /*
-            if (!m_Connector.isConnectedToServer())
-            {
-                MessageBox.Show("Не установлено соединение\n с сервером", "Ошибка");
-                return;
-            }
-            m_ChatMsgs.Add(new(NewMessageBlock.Text, new SolidColorBrush(Color.FromRgb(0, 255, 0))));
-            m_Connector.SendMessage(NewMessageBlock.Text);
-            RefreshMessageBox();
-            NewMessageBlock.Text = "";*/
+            m_MainModule.addUserMessage(NewMessageBlock.Text);
+            NewMessageBlock.Text = "";
         }
 
         private void RefreshMessageBox()
@@ -56,9 +53,7 @@ namespace ChatClient
                 MyMessageBox.Items.Add(it);
             }
         }
-
-
-        
+                
         private void NewMessageBlock_LostFocus(object sender, RoutedEventArgs e)
         {
             if(NewMessageBlock.Text == "")
@@ -75,6 +70,12 @@ namespace ChatClient
             {
                 NewMessageBlock.Text = "";
             }
+        }
+
+        void timer_Tick(object sender, EventArgs e)
+        {
+            m_MainModule.TimerMethod();
+            RefreshMessageBox();
         }
     }
 }
