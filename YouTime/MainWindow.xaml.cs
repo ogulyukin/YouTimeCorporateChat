@@ -1,69 +1,47 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-
+using System.Threading;
+using System.Windows.Threading;
 
 namespace ChatClient
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
-        ServerConnector m_Connector;
+        public delegate void MessageUpdater();
         List<MessageItem> m_ChatMsgs;
+        MainModule m_MainModule;
 
         public MainWindow()
         {
             InitializeComponent();
-            NewMessageBlock.IsEnabled = false;
-            m_Connector = new();
             m_ChatMsgs = new();
+            m_MainModule = new(m_ChatMsgs, RefreshMessageBox);
+            if (!m_MainModule.StartConfigMagager())
+            {
+                var dialog = new SettingsDialog("127.0.0.1", "8005");
+                dialog.ShowDialog();
+                m_MainModule.AddNewConfig(dialog.ipAdress.Text, dialog.portAdress.Text);
+            }
+            IPadressBlock.Text = $"Server: {m_MainModule.GetServerAdres()}";
+            ChatName.Text = m_MainModule.GetCurrentChatName();
+            DispatcherTimer timer = new DispatcherTimer();
+            timer.Interval = TimeSpan.FromSeconds(2);
+            timer.Tick += timer_Tick;
+            timer.Start();
         }
 
         private void GoButton_Click(object sender, RoutedEventArgs e)
         {
-            if(!Validator.ValidateIp(IPadressBlock.Text))
-            {
-                MessageBox.Show("Некорректный IP адрес сервера!", "Ошибка");
-                return;
-            }
-
-            int port;
-            string resultmesg = "";
-
-            if(int.TryParse(PortBlock.Text, out port))
-            {
-                resultmesg = m_Connector.ConnectToServer(IPadressBlock.Text, port);
-            }
-
-            MessageBox.Show(resultmesg);
-
-            if (resultmesg == "Соединение установлено")
-            {
-                NewMessageBlock.IsEnabled = true;
-            }                
+            var dialog = new LoginDialog(m_MainModule.GetCurrentUserNick());
+            dialog.ShowDialog();
+            m_MainModule.StartNetwork(dialog.Username.Text, dialog.Password.Password);
         }
 
         private void SendButton_Click(object sender, RoutedEventArgs e)
         {
-
-            if (!m_Connector.isConnectedToServer())
-            {
-                MessageBox.Show("Не установлено соединение\n с сервером", "Ошибка");
-                return;
-            }
-            m_ChatMsgs.Add(new(NewMessageBlock.Text, new SolidColorBrush(Color.FromRgb(0, 255, 0)))); 
-            m_ChatMsgs.Add(new(m_Connector.SendMessage(NewMessageBlock.Text), new SolidColorBrush(Color.FromRgb(255,0,0))));
-            RefreshMessageBox();
+            m_MainModule.addUserMessage(NewMessageBlock.Text);
             NewMessageBlock.Text = "";
         }
 
@@ -75,43 +53,7 @@ namespace ChatClient
                 MyMessageBox.Items.Add(it);
             }
         }
-
-        private void IPadressBlock_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (IPadressBlock.Text == "")
-            {
-                IPadressBlock.Text = "Введите IP адресс";
-                IPadressBlock.Foreground = Brushes.Gray;
-            }
-        }
-
-        private void IPadressBlock_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if(IPadressBlock.Text == "Введите IP адресс")
-            {
-                IPadressBlock.Text = "";
-                IPadressBlock.Foreground = Brushes.Black;
-            }
-        }
-
-        private void PortBlock_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if (PortBlock.Text == "")
-            {
-                PortBlock.Text = "Введите номер порта";
-                PortBlock.Foreground = Brushes.Gray;
-            }
-        }
-
-        private void PortBlock_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if(PortBlock.Text == "Введите номер порта")
-            {
-                PortBlock.Text = "";
-                PortBlock.Foreground = Brushes.Black;
-            }
-        }
-
+                
         private void NewMessageBlock_LostFocus(object sender, RoutedEventArgs e)
         {
             if(NewMessageBlock.Text == "")
@@ -128,6 +70,12 @@ namespace ChatClient
             {
                 NewMessageBlock.Text = "";
             }
+        }
+
+        void timer_Tick(object sender, EventArgs e)
+        {
+            m_MainModule.TimerMethod();
+            RefreshMessageBox();
         }
     }
 }

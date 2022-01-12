@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ChatClient"
         mc:Ignorable="d"
-        Title="Chat client" Height="500" Width="300">
+        Title="Your Time Client" Height="500" Width="500">
     <Grid Margin="1">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*"/>
@@ -18,8 +18,8 @@
             <RowDefinition Height="1*"/>
             <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
-        <TextBox x:Name="IPadressBlock" Text="Введите IP адресс" Foreground="Gray" Grid.Column="0" Grid.Row="0" FontSize="20" TextAlignment="Center" VerticalAlignment="Center" GotFocus="IPadressBlock_GotFocus" LostFocus="IPadressBlock_LostFocus"/>
-        <TextBox x:Name="PortBlock" Text="Введите номер порта" Foreground="Gray" Grid.Column="0" Grid.Row="1" FontSize="20" TextAlignment="Center" VerticalAlignment="Center" GotFocus="PortBlock_GotFocus" LostFocus="PortBlock_LostFocus"/>
+        <TextBlock x:Name="IPadressBlock" Text="Адрес сервера" Foreground="Black" Grid.Column="0" Grid.Row="0" FontSize="20" TextAlignment="Center" VerticalAlignment="Center"/>
+        <TextBlock x:Name="ChatName" Text="Текущий чат" Foreground="Black" Grid.Column="0" Grid.Row="1" FontSize="20" TextAlignment="Center" VerticalAlignment="Center"/>
         <Button x:Name="GoButton" Content="Соединиться" Grid.Column="0" Grid.Row="2" Margin="2" FontSize="20" FontWeight="Bold" Click="GoButton_Click"/>
         <ListBox x:Name="MyMessageBox" Grid.Column="0" Grid.Row="3" VerticalContentAlignment="Top" HorizontalContentAlignment="Stretch">
             <ListBox.ItemTemplate>
@@ -28,7 +28,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="{Binding Message}"/>                      
+                        <TextBlock Text="{Binding Message}" TextWrapping="Wrap"/>                      
                     </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>
