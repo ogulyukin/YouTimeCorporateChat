@@ -14,7 +14,12 @@ namespace ChatClient
         info,
         error,
         warning,
-        message
+        message,
+        file,
+        image,
+        autorisation,
+        requestMessages,
+        requestContact
     }
 
     public class MainModule
@@ -46,10 +51,6 @@ namespace ChatClient
             });
             m_UserMessagesQueue = new();
             m_ServerMessagesQueue = new();
-            //TimerCallback callback = new TimerCallback(TimerMethod);
-            //Timer timer = new(callback); //создаем объект таймера
-            //timer.Change(1000, 2000); //через 1 сек каждые 2 сек
-            //m_ChatList = DbWorker.getChatList(//TODO Add string connection here );
         }
 
         public void StartNetwork(string username, string password)
@@ -67,7 +68,7 @@ namespace ChatClient
             //if (m_CurentUserId == 0) return; //Uncoment it
             var msg = new NetworkMessageItem()
             {
-                type = NetworkMessageType.message,
+                type = MessageType.message,
                 ChatId = m_CurrentChat,
                 SenderId = m_CurentUserId,
                 Message = message
@@ -130,10 +131,7 @@ namespace ChatClient
             {
                 m_ChatMsgs.Add(new MessageItem("System", $"ERROR: Unable to access database!!!",
                 SetMessageColor(MessageType.error), messageTime));
-            }
-
-            //messageCallBack();/*
-            
+            }            
         }
 
         private SolidColorBrush SetMessageColor(MessageType type)
@@ -165,7 +163,7 @@ namespace ChatClient
             while (m_ServerMessagesQueue.Count > 0)
             {
                 var msg = m_ServerMessagesQueue.Dequeue();
-                Messager(MessageType.message, msg.SenderId, msg.ChatId, msg.Message);
+                Messager(msg.type, msg.SenderId, msg.ChatId, msg.Message);
             }
             //Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.DataBind,
             //        new Updater(messageCallBack));

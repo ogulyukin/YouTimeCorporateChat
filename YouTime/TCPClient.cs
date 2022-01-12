@@ -33,9 +33,7 @@ namespace Networking
 
         public void ConnectToServer(Configuration.Config config, string username, string password)
         {
-            m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = NetworkMessageType.info, Message = "System: Starting server..." });
-            //Application.Current.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.DataBind,
-            //new UpdateMessages(m_UpdateMessages));
+            m_ServerMessagesQueue.Enqueue(new() {  ChatId = 0, SenderId = 0, type = MessageType.info, Message = "System: Starting server...", StoreToDataBase = false });
 
             try
             {
@@ -45,7 +43,7 @@ namespace Networking
             }
             catch (Exception exc)
             {
-                m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = NetworkMessageType.info, Message = $"ERROR:{exc.Message}" });
+                m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.error, Message = $"ERROR:{exc.Message}" });
                 return;
             }
 
@@ -56,10 +54,10 @@ namespace Networking
             }catch(Exception exc)
             {
                 m_Connection.Close();
-                m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = NetworkMessageType.info, Message = $"ERROR:{exc.Message}" });
+                m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.error, Message = $"ERROR:{exc.Message}" });
                 return;
             }
-            m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = NetworkMessageType.info, Message = "System: Connection to Sever established." });
+            m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.info, Message = "System: Connection to Sever established." });
             WaitForNewMessages();
             CloseConnection();
             return;
@@ -118,7 +116,7 @@ namespace Networking
                     {
                         if (exc.HResult != -2146232800)
                         {
-                            m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = NetworkMessageType.info, Message = $"ERROR:{exc.Message}" });
+                            m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.error, Message = $"ERROR:{exc.Message}" });
                             isConnected = false;
                             break;
                         }
@@ -134,7 +132,9 @@ namespace Networking
                 {
                     var dataArray = data.ToArray();
                     msg = Encoding.Unicode.GetString(dataArray, 0, dataArray.Length);
-                    m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = NetworkMessageType.info, Message = $"SERVER:{ msg.Replace('"', ' ') }" });
+                    int index = msg.IndexOf('\0');
+                    var result = msg.Remove(index);
+                    m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.message, Message = $"SERVER:{ result }" });
                     data.Clear();
                 }
             }
