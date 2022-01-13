@@ -8,12 +8,16 @@ namespace TCPServer
 {
     public enum MessageType
     {
+        none,
         info,
         error,
         warning,
         message,
         file,
-        image
+        image,
+        autorisation,
+        requestMessages,
+        requestContact
     }
 
     public enum LogLevel

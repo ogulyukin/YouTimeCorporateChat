@@ -8,7 +8,7 @@ namespace Configuration
     public class ConfigManager
     {
         public Config AppConfig;
-        public delegate void Message(MessageType type, int senderId, int chatId, string msg);
+        public delegate void Message(MessageType type, int senderId, int chatId, string msg, int id);
         Message m_Msg;
 
         public ConfigManager(Message msg)
@@ -29,16 +29,16 @@ namespace Configuration
             }
             catch (Exception exc)
             {
-                m_Msg(MessageType.error, 0, 0, $"ERROR: {exc.Message}");
+                m_Msg(MessageType.error, 0, 0, $"ERROR: {exc.Message}", 0);
                 return false;
             }
-            m_Msg(MessageType.info, 0, 0, $"Loading server ip adress: {AppConfig.SetServerIp(tempConfig.IP)}");
-            m_Msg(MessageType.info,0, 0, $"Loading server port: {AppConfig.SetServerPort(tempConfig.Port)}");
-            m_Msg(MessageType.info, 0, 0, $"Local database check: {AppConfig.SetLocalDB(tempConfig.DBPath)}");
+            m_Msg(MessageType.info, 0, 0, $"Loading server ip adress: {AppConfig.SetServerIp(tempConfig.IP)}", 0);
+            m_Msg(MessageType.info,0, 0, $"Loading server port: {AppConfig.SetServerPort(tempConfig.Port)}", 0);
+            m_Msg(MessageType.info, 0, 0, $"Local database check: {AppConfig.SetLocalDB(tempConfig.DBPath)}", 0);
             AppConfig.UserId = int.TryParse(tempConfig.UserId, out int value0) ? value0 : 0;
-            m_Msg(MessageType.info, 0, 0, $"Loading User ID: {AppConfig.UserId}");
+            m_Msg(MessageType.info, 0, 0, $"Loading User ID: {AppConfig.UserId}", 0);
             AppConfig.CurrentChatId = int.TryParse(tempConfig.UserId, out int value1) ? value1 : 0;
-            m_Msg(MessageType.info, 0, 0, $"Current chat: {AppConfig.CurrentChatId}");
+            m_Msg(MessageType.info, 0, 0, $"Current chat: {AppConfig.CurrentChatId}", 0);
             return true;
         }
 

@@ -2,7 +2,7 @@
 using System.Windows.Media;
 
 namespace ChatClient
-{
+{	
     public class MessageItem
     {
         public string Message { get; set; }
