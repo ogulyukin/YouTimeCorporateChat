@@ -15,8 +15,6 @@ namespace Networking
 {
     public class TCPClient
     {
-        public delegate void Message(MessageType type, int senderId, int chatId, string msg);
-        private Message m_Msg;
         private TcpClient m_Connection;
         private SslStream m_SslStream;
         private static Hashtable m_CertificateErrors = new Hashtable();
@@ -24,16 +22,15 @@ namespace Networking
         private Queue<NetworkMessageItem> m_UserMessagesQueue;
         private Queue<NetworkMessageItem> m_ServerMessagesQueue;
 
-        public TCPClient(Queue<NetworkMessageItem> userMessagesQueue, Queue<NetworkMessageItem> serverMessagesQueue, Message msg)
+        public TCPClient(Queue<NetworkMessageItem> userMessagesQueue, Queue<NetworkMessageItem> serverMessagesQueue)
         {
             m_UserMessagesQueue = userMessagesQueue;
             m_ServerMessagesQueue = serverMessagesQueue;
-            m_Msg = msg;
         }
 
         public void ConnectToServer(Configuration.Config config, string username, string password)
         {
-            m_ServerMessagesQueue.Enqueue(new() {  ChatId = 0, SenderId = 0, type = MessageType.info, Message = "System: Starting server...", StoreToDataBase = false });
+            m_ServerMessagesQueue.Enqueue(new() {  ChatId = 0, SenderId = 0, type = MessageType.info, Message = "System: Starting server...", MessageId = 0 });
 
             try
             {
@@ -43,7 +40,7 @@ namespace Networking
             }
             catch (Exception exc)
             {
-                m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.error, Message = $"ERROR:{exc.Message}" });
+                m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.error, Message = $"ERROR:{exc.Message}", MessageId = 0 });
                 return;
             }
 
@@ -54,10 +51,11 @@ namespace Networking
             }catch(Exception exc)
             {
                 m_Connection.Close();
-                m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.error, Message = $"ERROR:{exc.Message}" });
+                m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.error, Message = $"ERROR:{exc.Message}", MessageId = 0 });
                 return;
             }
-            m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.info, Message = "System: Connection to Sever established." });
+            m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.info, Message = "System: Connection to Sever established.", MessageId = 0 });
+            SendNewMessages();
             WaitForNewMessages();
             CloseConnection();
             return;
@@ -67,32 +65,10 @@ namespace Networking
         {
             return true;
         }
-
-        public string GetNewMessages()
-        {
-            var buffer = new byte[256];
-            var data = new List<byte>();
-            CancellationTokenSource source;
-            CancellationToken token = (source = new()).Token;
-            do
-            {
-                m_SslStream.Read(buffer);
-                data.AddRange(buffer);
-            } while (m_Connection.Available > 0);
-
-            byte[] dataArray = data.ToArray();
-
-            return Encoding.Unicode.GetString(dataArray, 0, dataArray.Length);
-        }
-
+        
         public bool isConnectedToServer()
         {
             return m_Connection != null && m_Connection.Connected;
-        }
-
-        private void CloseConnection()
-        {
-            m_Connection.Close();
         }
         
         private void WaitForNewMessages()
@@ -101,14 +77,14 @@ namespace Networking
             var buffer = new byte[256];
             var data = new List<byte>();
             string msg = "";
-
+            int bytesReceived = 0;
             while (isConnected)
             {
                 do
                 {
                     try
                     {
-                        m_SslStream.Read(buffer, 0, buffer.Length);
+                        bytesReceived += m_SslStream.Read(buffer, 0, buffer.Length);
                         data.AddRange(buffer);
                         Array.Clear(buffer, 0, buffer.Length);
                     }
@@ -116,7 +92,7 @@ namespace Networking
                     {
                         if (exc.HResult != -2146232800)
                         {
-                            m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.error, Message = $"ERROR:{exc.Message}" });
+                            m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.error, Message = $"ERROR:{exc.Message}", MessageId = 0 });
                             isConnected = false;
                             break;
                         }
@@ -125,17 +101,16 @@ namespace Networking
                             if (m_Connection.Connected) SendNewMessages();
                         }
                     }
-                    SendNewMessages();
                 } while (m_Connection.Available > 0);
+                SendNewMessages();
                 isConnected = m_Connection.Connected;
                 if (isConnected)
                 {
                     var dataArray = data.ToArray();
-                    msg = Encoding.Unicode.GetString(dataArray, 0, dataArray.Length);
-                    int index = msg.IndexOf('\0');
-                    var result = msg.Remove(index);
-                    m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.message, Message = $"SERVER:{ result }" });
+                    msg = Encoding.Unicode.GetString(dataArray, 0, bytesReceived);
+                    m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.message, Message = $"SERVER:{ msg }", MessageId = 0 });
                     data.Clear();
+                    bytesReceived = 0;
                 }
             }
             CloseConnection();
@@ -146,8 +121,31 @@ namespace Networking
             while(m_UserMessagesQueue.Count > 0)
             {
                 var msg = m_UserMessagesQueue.Dequeue();
-                m_SslStream.WriteAsync(Encoding.Unicode.GetBytes($"{msg.SenderId}:{msg.ChatId}:{msg.Message}"));
+                m_SslStream.WriteAsync(Encoding.Unicode.GetBytes($"{GetTypeId(msg.type)}|{msg.SenderId}|{msg.ChatId}|{msg.Message}|"));
+                m_SslStream.WriteAsync(Encoding.Unicode.GetBytes($"0000"));
             }
+        }
+
+        private string GetTypeId(MessageType type)
+        {
+            switch(type)
+            {
+                case MessageType.message:
+                    return "001";
+                case MessageType.requestContact:
+                    return "002";
+                case MessageType.requestMessages:
+                    return "003";
+                case MessageType.autorisation:
+                    return "004";
+            }
+            return "000";
+        }
+
+        private void CloseConnection()
+        {
+            m_Connection.Close();
+            m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.warning, Message = "SERVER: Connection to server Closed", MessageId = 0 });
         }
     }
 }

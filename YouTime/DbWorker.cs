@@ -32,6 +32,42 @@ namespace ChatClient
             return result;
         }
 
+        public static int GetLastChatId(string connection)
+        {
+            using var db = new SqliteConnection(connection);
+            db.Open();
+            var sql = $"select max(Id) from Chat_Tab";
+            var query01 = new SqliteCommand(sql, db);
+            var res = query01.ExecuteScalar();
+            bool resId = int.TryParse(res.ToString(), out int resultId);
+            db.Close();
+            return resId ? resultId : -1;
+        }
+
+        public static int GetLastMessageId(int chatId, string connection)
+        {
+            using var db = new SqliteConnection(connection);
+            db.Open();
+            var sql = $"select max(Id) from Message_Tab where ChatId = '{chatId}'";
+            var query01 = new SqliteCommand(sql, db);
+            var res = query01.ExecuteScalar();
+            bool resId = int.TryParse(res.ToString(), out int resultId);
+            db.Close();
+            return resId ? resultId : -1;
+        }
+
+        public static int GetLastContactId(string connection)
+        {
+            using var db = new SqliteConnection(connection);
+            db.Open();
+            var sql = "select max(UserId) from UserContacts_Tab";
+            var query01 = new SqliteCommand(sql, db);
+            var res = query01.ExecuteScalar();
+            bool resId = int.TryParse(res.ToString(), out int resultId);
+            db.Close();
+            return resId ? resultId : -1;
+        }
+
         public static int AddChat(string name, string connection)
         {
             using var db = new SqliteConnection(connection);
@@ -87,11 +123,11 @@ namespace ChatClient
             return result;
         }
 
-        public static int AddMessage(int chatId, string dateTime, int senderId, string message, string connection )
+        public static int AddMessage(int id, int chatId, string dateTime, int senderId, string message, string connection )
         {
             using var db = new SqliteConnection(connection);
             db.Open();
-            var sql = $"INSERT INTO 'Message_Tab'(DateTime, SenderId, ChatId, Message) VALUES ('{dateTime}','{senderId}', '{chatId}', '{message}');";
+            var sql = $"INSERT INTO 'Message_Tab'(id, DateTime, SenderId, ChatId, Message) VALUES ('{id}','{dateTime}','{senderId}', '{chatId}', '{message}');";
             var query01 = new SqliteCommand(sql, db);
             query01.ExecuteNonQuery();
             sql = "SELECT last_insert_rowid() from Message_Tab";
@@ -99,7 +135,7 @@ namespace ChatClient
             var res = query02.ExecuteScalar();
             bool resId = int.TryParse(res.ToString(), out int resultId);
             db.Close();
-            return resId ? resultId : -1;
+            return resId && resultId == id ? resultId : -1;
         }
 
         public static List<DataModelContact> getContactList(string connection)
@@ -126,21 +162,25 @@ namespace ChatClient
             return result;
         }
 
-        public static int AddContact(string name, string connection)
+        public static int AddContact(int id, string name, string connection)
         {
             using var db = new SqliteConnection(connection);
             db.Open();
-            int result = GetChatId(name, db);
-            if (result != 0) return result;
-            var sql = $"INSERT INTO 'Chat_Tab'(Name) VALUES ('{name}');";
+            var sql = $"INSERT INTO UserContacts_Tab (UserId,R,G,B,Nickname) VALUES ('{id}','{GenerageRGB()}','{GenerageRGB()}','{GenerageRGB()}','{name}')";
             var query01 = new SqliteCommand(sql, db);
             query01.ExecuteNonQuery();
-            sql = "SELECT last_insert_rowid() from Message_Tab";
+            sql = "SELECT last_insert_rowid() from UserContacts_Tab";
             var query02 = new SqliteCommand(sql, db);
             var res = query02.ExecuteScalar();
             bool resId = int.TryParse(res.ToString(), out int resultId);
             db.Close();
-            return resId ? resultId : -1;
+            return resId && resultId == id ? resultId : -1;
+        }
+
+        private static string GenerageRGB()
+        {
+            var rand = new Random();
+            return rand.Next(0, 255).ToString();
         }
     }
 }

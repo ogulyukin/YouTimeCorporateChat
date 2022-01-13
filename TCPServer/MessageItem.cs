@@ -1,19 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ChatClient;
 
-namespace Networking
+namespace TCPServer
 {
-    public class NetworkMessageItem
+    public class MessageItem
     {
         public MessageType type { get; init; }
         public int SenderId { get; init; }
         public int ChatId { get; init; }
         public string Message { get; init; }
-        public int MessageId { get; init; }
+        public int MessageId { get; set; }
         public string MessageTime { get; init; }
     }
 }
