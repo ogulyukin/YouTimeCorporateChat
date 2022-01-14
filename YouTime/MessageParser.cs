@@ -32,11 +32,16 @@ namespace Networking
                 type = GetMessageType(messageContent[0]),
                 SenderId = sender,
                 ChatId = chat,
-                Message = messageContent[3],
+                Message = StringChecker(messageContent[3]),
                 MessageId = msgid,
-                MessageTime = messageContent[5]
+                MessageTime = StringChecker(messageContent[5])
             };
             return result;
+        }
+
+        private static string StringChecker(string str)
+        {
+            return str.Contains('\0') ? str.Remove(str.IndexOf('\0')) : str;
         }
     }
 }

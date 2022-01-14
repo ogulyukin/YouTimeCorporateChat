@@ -34,11 +34,12 @@ namespace ChatClient
         private bool m_ConfigSaved = false;
 
         public MainModule(List<MessageItem> chatMsgs, Updater refreshMsg)
-        {
-            m_ChatMsgs = chatMsgs; // = DbWorker.getMessageList(m_Connection); !!!!!
+        { 
             m_CManager = new(Messager);
             m_ContactList = DbWorker.getContactList(m_Connection);
             m_User = new();
+            m_ChatMsgs = chatMsgs;
+            LoadMessagesDB();
             m_ContactList.Add(new DataModelContact()
             {
                 ContactId = 0,
@@ -52,6 +53,15 @@ namespace ChatClient
             m_User.UserLastMessageId = DbWorker.GetLastMessageId(m_User.UserChatId, m_Connection);
             m_User.UserLastChatId = DbWorker.GetLastChatId(m_Connection);
             Messager(MessageType.info, 0, 0, $"LastContact = {m_User.UserLastContactId} LastMessage = {m_User.UserLastMessageId}", 0);
+        }
+
+        private void LoadMessagesDB()
+        {
+            var messagesDB = DbWorker.getMessageList(m_Connection, m_User.UserChatId);
+            foreach (var it in messagesDB)
+            {
+                AddMessageToListBox(it);
+            }
         }
 
         public void StartNetwork(string username, string password)
@@ -146,8 +156,9 @@ namespace ChatClient
         {
             if (msg == null) return;
             
-            if (msg.type == MessageType.message && msg.MessageId > 0)
+            if (msg.type == MessageType.message)
             {
+                if (msg.MessageId <= m_User.UserLastMessageId) return;
                 int dbworkResult = DbWorker.AddMessage(msg.MessageId, msg.ChatId, msg.MessageTime, msg.SenderId, msg.Message, m_Connection);
                 if (dbworkResult == -1)
                 {

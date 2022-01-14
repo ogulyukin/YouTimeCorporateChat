@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
 using System.Text;
 using System.Windows.Media;
+using Networking;
 
 namespace ChatClient
 {
@@ -121,25 +122,29 @@ namespace ChatClient
             return result;
         }
 
-        public static List<DataModelMessage> getMessageList(string connection, int chatId)
+        public static List<NetworkMessageItem> getMessageList(string connection, int chatId)
         {
-            var result = new List<DataModelMessage>();
+            var result = new List<NetworkMessageItem>();
 
             using var db = new SqliteConnection(connection);
             db.Open();
-            var sql = $"SELECT * FROM 'Message_Tab' WHERE ChatId = {chatId}";
+            //var sql = $"SELECT * FROM 'Message_Tab' WHERE ChatId = {chatId}";
+            var sql = $"SELECT * FROM 'Message_Tab'";
             using var query = new SqliteCommand(sql, db);
             using var res = query.ExecuteReader();
             if (res.HasRows)
             {
                 while (res.Read())
                 {
-                    var message = new DataModelMessage();
-                    message.Id = res.GetInt32("id");
-                    message.ChatId = res.GetInt32("ChatId");
-                    message.MyDateTime = res.GetString("DateTime");
-                    message.Message = res.GetString("Message");
-                    message.SenderId = res.GetInt32("SenderId");
+                    var message = new NetworkMessageItem()
+                    {
+                        type = MessageType.message,
+                        MessageId = res.GetInt32("id"),
+                        ChatId = res.GetInt32("ChatId"),
+                        MessageTime = res.GetString("DateTime"),
+                        Message = res.GetString("Message"),
+                        SenderId = res.GetInt32("SenderId")
+                    };
                     result.Add(message);
                 }
             }
@@ -151,13 +156,21 @@ namespace ChatClient
         {
             using var db = new SqliteConnection(connection);
             db.Open();
-            var sql = $"INSERT INTO 'Message_Tab'(id, DateTime, SenderId, ChatId, Message) VALUES ('{id}','{dateTime}','{senderId}', '{chatId}', '{message}');";
+            var sql = $"SELECT * FROM 'Message_Tab' WHERE id = {id}";
+            var query00 = new SqliteCommand(sql, db);
+            using var res00 = query00.ExecuteReader();
+            if(res00.HasRows)
+            {
+                db.Close();
+                return -1;
+            }
+            sql = $"INSERT INTO 'Message_Tab'(id, DateTime, SenderId, ChatId, Message) VALUES ('{id}','{dateTime}','{senderId}', '{chatId}', '{message}');";
             var query01 = new SqliteCommand(sql, db);
             query01.ExecuteNonQuery();
             sql = "SELECT last_insert_rowid() from Message_Tab";
             var query02 = new SqliteCommand(sql, db);
-            var res = query02.ExecuteScalar();
-            bool resId = int.TryParse(res.ToString(), out int resultId);
+            var res01 = query02.ExecuteScalar();
+            bool resId = int.TryParse(res01.ToString(), out int resultId);
             db.Close();
             return resId && resultId == id ? resultId : -1;
         }
