@@ -56,6 +56,7 @@ namespace ChatClient
             return resId ? resultId : -1;
         }
 
+
         public static int GetLastContactId(string connection)
         {
             using var db = new SqliteConnection(connection);
@@ -66,6 +67,29 @@ namespace ChatClient
             bool resId = int.TryParse(res.ToString(), out int resultId);
             db.Close();
             return resId ? resultId : -1;
+        }
+
+        public static DataModelContact GetContactById(int contactId, string connection)
+        {
+            var contact = new DataModelContact();
+
+            using var db = new SqliteConnection(connection);
+            db.Open();
+            var sql = $"SELECT * FROM 'UserContacts_Tab' WHERE UserId = {contactId}";
+            using var query = new SqliteCommand(sql, db);
+            using var res = query.ExecuteReader();
+            if (res.HasRows)
+            {
+                while (res.Read())
+                {
+                    
+                    contact.ContactId = res.GetInt32("UserId");
+                    contact.Nickname = res.GetString("Nickname");
+                    contact.BackColor = new SolidColorBrush(Color.FromRgb(res.GetByte("R"), res.GetByte("G"), res.GetByte("B")));
+                }
+            }
+            db.Close();
+            return contact;
         }
 
         public static int AddChat(string name, string connection)
@@ -103,7 +127,7 @@ namespace ChatClient
 
             using var db = new SqliteConnection(connection);
             db.Open();
-            var sql = "SELECT * FROM 'Message_Tab'";
+            var sql = $"SELECT * FROM 'Message_Tab' WHERE ChatId = {chatId}";
             using var query = new SqliteCommand(sql, db);
             using var res = query.ExecuteReader();
             if (res.HasRows)
@@ -144,7 +168,7 @@ namespace ChatClient
 
             using var db = new SqliteConnection(connection);
             db.Open();
-            var sql = "SELECT * FROM 'Chat_Tab'";
+            var sql = "SELECT * FROM 'UserContacts_Tab'";
             using var query = new SqliteCommand(sql, db);
             using var res = query.ExecuteReader();
             if (res.HasRows)
@@ -152,13 +176,13 @@ namespace ChatClient
                 while (res.Read())
                 {
                     var contact = new DataModelContact();
-                    contact.ContactId = res.GetInt32("id");
-                    contact.Nickname = res.GetString("Name");
-                    contact.RealName = res.GetString("Name");
+                    contact.ContactId = res.GetInt32("Userid");
+                    contact.Nickname = res.GetString("Nickname");
                     contact.BackColor = new SolidColorBrush(Color.FromRgb(res.GetByte("R"), res.GetByte("G"), res.GetByte("B")));
                     result.Add(contact);
                 }
             }
+            db.Close();
             return result;
         }
 
