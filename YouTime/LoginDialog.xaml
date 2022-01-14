@@ -18,9 +18,9 @@
             <RowDefinition Height="1*"/>
             <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
-        <TextBlock Text="Your Username" Grid.Column="0" Grid.Row="0" FontSize="20" TextAlignment="Center" VerticalAlignment="Center"/>
+        <TextBlock Text="Your Username" Grid.Column="0" Grid.Row="0" FontSize="14" TextAlignment="Center" VerticalAlignment="Center"/>
         <TextBox x:Name="Username" Grid.Column="0" Grid.Row="1" FontSize="20" TextAlignment="Center" VerticalAlignment="Center"/>
-        <TextBlock Text="You Password" Grid.Column="0" Grid.Row="2" FontSize="20" TextAlignment="Center" VerticalAlignment="Center"/>
+        <TextBlock Text="You Password" Grid.Column="0" Grid.Row="2" FontSize="14" TextAlignment="Center" VerticalAlignment="Center"/>
         <PasswordBox x:Name="Password" Grid.Column="0" Grid.Row="3" Width="190" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         <Button x:Name="AcceptButton" Content="Accept" Grid.Column="0" Grid.Row="4" FontSize="20" Click="AcceptButton_Click" IsDefault="True"/>
     </Grid>

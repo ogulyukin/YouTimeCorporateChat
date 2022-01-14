@@ -9,6 +9,8 @@
     <Grid Margin="1">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="0.1*"/>
+            <ColumnDefinition Width="5*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="1*"/>
@@ -18,22 +20,35 @@
             <RowDefinition Height="1*"/>
             <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
-        <TextBlock x:Name="IPadressBlock" Text="Адрес сервера" Foreground="Black" Grid.Column="0" Grid.Row="0" FontSize="20" TextAlignment="Center" VerticalAlignment="Center"/>
-        <TextBlock x:Name="ChatName" Text="Текущий чат" Foreground="Black" Grid.Column="0" Grid.Row="1" FontSize="20" TextAlignment="Center" VerticalAlignment="Center"/>
-        <Button x:Name="GoButton" Content="Соединиться" Grid.Column="0" Grid.Row="2" Margin="2" FontSize="20" FontWeight="Bold" Click="GoButton_Click"/>
-        <ListBox x:Name="MyMessageBox" Grid.Column="0" Grid.Row="3" VerticalContentAlignment="Top" HorizontalContentAlignment="Stretch">
+        <TextBlock x:Name="IPadressBlock" Text="Server adress" Foreground="Black" Grid.Column="2" Grid.Row="0" FontSize="14" TextAlignment="Center" VerticalAlignment="Center"/>
+        <TextBlock x:Name="ChatName" Text="Current chat name" Foreground="Black" Grid.Column="2" Grid.Row="1" FontSize="14" TextAlignment="Center" VerticalAlignment="Center"/>
+        <Button x:Name="GoButton" Content="Connect" Grid.Column="2" Grid.Row="2" Margin="2" FontSize="20" FontWeight="Bold" Click="GoButton_Click"/>
+        <ListBox x:Name="MyMessageBox" Grid.Column="2" Grid.Row="3" VerticalContentAlignment="Top" HorizontalContentAlignment="Stretch">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <Grid Margin="0.2" Background="{Binding BackColor}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="{Binding Message}" TextWrapping="Wrap"/>                      
+                        <TextBlock Text="{Binding Message}" TextWrapping="Wrap" FontSize="20"/>                      
                     </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
-        <TextBox x:Name="NewMessageBlock" Text="Введите сообщение" Foreground="Gray" Grid.Column="0" Grid.Row="4" FontSize="20" TextAlignment="Center" VerticalAlignment="Center" GotFocus="NewMessageBlock_GotFocus" LostFocus="NewMessageBlock_LostFocus"/>
-        <Button x:Name="SendButton" Content="Отправить" Grid.Column="0" Grid.Row="5" Margin="2" FontSize="20" FontWeight="Bold" Click="SendButton_Click" IsDefault="True"/>
+        <TextBlock x:Name="Contacts" Text="Contacts" Foreground="Black" Grid.Column="0" Grid.Row="0" FontSize="14" TextAlignment="Center" VerticalAlignment="Center"/>
+        <ListBox x:Name="MyContactBox" Grid.Column="0" Grid.Row="1" Grid.RowSpan="6" VerticalContentAlignment="Top" HorizontalContentAlignment="Stretch">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="0.2" Background="{Binding BackColor}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{Binding Nickname}" TextWrapping="Wrap" FontSize="20"/>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <TextBox x:Name="NewMessageBlock" Text="Enter message here" Foreground="Gray" Grid.Column="2" Grid.Row="4" FontSize="20" TextAlignment="Center" VerticalAlignment="Center" GotFocus="NewMessageBlock_GotFocus" LostFocus="NewMessageBlock_LostFocus"/>
+        <Button x:Name="SendButton" Content="Send " Grid.Column="2" Grid.Row="5" Margin="2" FontSize="20" FontWeight="Bold" Click="SendButton_Click" IsDefault="True"/>
     </Grid>
 </Window>
