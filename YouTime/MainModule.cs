@@ -75,7 +75,9 @@ namespace ChatClient
                 type = MessageType.message,
                 ChatId = m_User.UserChatId,
                 SenderId = m_User.UserId,
-                Message = userMessage
+                Message = userMessage,
+                MessageId = 0,
+                MessageTime = "-"
             };
             m_UserMessagesQueue.Enqueue(msg);
         }
@@ -152,8 +154,11 @@ namespace ChatClient
                     m_ChatMsgs.Add(new MessageItem("System", $"ERROR: Unable to access database!!!",
                     SetMessageColor(MessageType.error), msg.MessageTime));
                     AddMessageToListBox(msg);
+                    return;
                 }
-            }else if (msg.type == MessageType.requestContact)
+                AddMessageToListBox(msg);
+            }
+            else if (msg.type == MessageType.requestContact)
             {
                 DbWorker.AddContact(msg.SenderId, msg.Message, m_Connection);
                 var newcontact = DbWorker.GetContactById(msg.SenderId, m_Connection);
@@ -168,11 +173,19 @@ namespace ChatClient
         private void AddMessageToListBox(NetworkMessageItem msg)
         {
             if (msg.MessageId > m_User.UserLastMessageId) m_User.UserLastMessageId = msg.MessageId;
-            DataModelContact sender = GetContact(msg.SenderId);
-            if (sender == null)
+            DataModelContact sender;
+            if (msg.SenderId != 0)
             {
-                CreateMessageToServer(MessageType.requestContact, "", "", 0);
+                sender = GetContact(msg.SenderId);
+                if (sender == null)
+                {
+                    sender = new() { Nickname = "Unknown", BackColor = SetMessageColor(MessageType.error) };
+                }
+            }else
+            {
+                sender = new() { Nickname = "System", BackColor = SetMessageColor(MessageType.info) };
             }
+            
 
             m_ChatMsgs.Add(new MessageItem(sender.Nickname, $"{sender.Nickname}:{msg.Message}",
                 msg.SenderId == 0 ? SetMessageColor(msg.type) : sender.BackColor, msg.MessageTime));

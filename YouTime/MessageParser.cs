@@ -27,11 +27,14 @@ namespace Networking
             var messageContent =  msg.Split('|');
             int.TryParse(messageContent[1], out int sender);
             int.TryParse(messageContent[2], out int chat);
+            int.TryParse(messageContent[4], out int msgid);
             var result = new NetworkMessageItem() {
                 type = GetMessageType(messageContent[0]),
                 SenderId = sender,
                 ChatId = chat,
-                Message = messageContent[3]
+                Message = messageContent[3],
+                MessageId = msgid,
+                MessageTime = messageContent[5]
             };
             return result;
         }

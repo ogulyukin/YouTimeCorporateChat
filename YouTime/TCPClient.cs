@@ -109,8 +109,10 @@ namespace Networking
                 {
                     var dataArray = data.ToArray();
                     msg = Encoding.Unicode.GetString(dataArray, 0, bytesReceived);
-                    ProceedNewMessage(msg);
-                    //m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.message, Message = $"SERVER:{ msg }", MessageId = 0 });
+                    if (msg != String.Empty && !msg.StartsWith("0000"))
+                    {
+                        ProceedNewMessage(msg);
+                    }
                     data.Clear();
                     bytesReceived = 0;
                 }

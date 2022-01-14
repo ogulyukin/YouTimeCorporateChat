@@ -83,7 +83,7 @@ namespace TCPServer
 
             using var db = new SqliteConnection(connection);
             db.Open();
-            var sql = $"SELECT * FROM 'Message_Tab' WHERE ChatId = 'chatId' AND ID > '{startId}' ORDER BY ID";
+            var sql = $"SELECT * FROM 'Message_Tab' WHERE ChatId = '{chatId}' AND ID > '{startId}' ORDER BY ID";
             using var query = new SqliteCommand(sql, db);
             using var res = query.ExecuteReader();
             if (res.HasRows)
@@ -92,10 +92,11 @@ namespace TCPServer
                 {
                     var message = new MessageItem()
                     {
-                        SenderId = res.GetInt32("id"),
+                        SenderId = res.GetInt32("SenderId"),
                         ChatId = res.GetInt32("ChatId"),
                         MessageTime = res.GetString("DateTime"),
                         Message = res.GetString("Message"),
+                        MessageId = res.GetInt32("id"),
                         type = MessageType.message
                     };                    
                     result.Add(message);
@@ -109,10 +110,11 @@ namespace TCPServer
         {
             using var db = new SqliteConnection(connection);
             db.Open();
-            var sql = $"INSERT INTO 'Message_Tab'(DateTime, SenderId, ChatId, Message) VALUES ('{msg.MessageTime}','{msg.SenderId}', '{msg.ChatId}', '{msg.Message}');";
+            var msgTime = DateTime.Now.ToString();
+            var sql = $"INSERT INTO 'Message_Tab'(DateTime, SenderId, ChatId, Message) VALUES ('{msgTime}','{msg.SenderId}', '{msg.ChatId}', '{msg.Message}');";
             var query01 = new SqliteCommand(sql, db);
             query01.ExecuteNonQuery();
-            sql = $"SELECT id from Message_Tab WHERE SenderId = '{msg.SenderId}' AND DateTime = '{msg.MessageTime}' AND Message = '{msg.Message}'";
+            sql = $"SELECT id from Message_Tab WHERE SenderId = '{msg.SenderId}' AND DateTime = '{msgTime}' AND Message = '{msg.Message}'";
             var query02 = new SqliteCommand(sql, db);
             var res = query02.ExecuteScalar();
             bool resId = int.TryParse(res.ToString(), out int resultId);
