@@ -94,10 +94,14 @@ namespace TCPServer
                 {
                     var dataArray = data.ToArray();
                     msg = Encoding.Unicode.GetString(dataArray, 0, byteReceived);
+                    
                     if(msg != String.Empty && !msg.StartsWith("0000"))
                     {
                         ProceedNewMessage(msg);
-                    }    
+                    }
+                    var newUserContactLastId = UserRequests.RequestContacts(m_Messages4User, m_User.UserLastContactId, m_DBConnection);
+                    if (newUserContactLastId > m_User.UserLastContactId) m_User.UserLastContactId = newUserContactLastId;
+                    UserRequests.RequestMessages(m_Messages4User, m_User.UserChatId, m_User.UserLastMessageId, m_DBConnection);
                     data.Clear();
                     byteReceived = 0;
                 }
@@ -125,12 +129,12 @@ namespace TCPServer
             }
             else if(newMessage.type == MessageType.requestContact && m_User.UserId > 0)
             {
-                var newUserContactLastId = UserRequests.RequestContacts(m_Messages4User, m_User.UserLastContactId, m_DBConnection);
+                var newUserContactLastId = UserRequests.RequestContacts(m_Messages4User, newMessage.SenderId, m_DBConnection);
                 if (newUserContactLastId > m_User.UserLastContactId) m_User.UserLastContactId = newUserContactLastId;
             }
             else if(newMessage.type == MessageType.requestMessages && m_User.UserId > 0)
             {
-                UserRequests.RequestMessages(m_Messages4User, m_User.UserChatId, m_User.UserLastMessageId, m_DBConnection);
+                UserRequests.RequestMessages(m_Messages4User, newMessage.ChatId, newMessage.SenderId, m_DBConnection);
             }else if(newMessage.type == MessageType.message && m_User.UserId > 0)
             {
                 DbWorker.AddMessage(newMessage, m_DBConnection);
@@ -146,9 +150,11 @@ namespace TCPServer
             while(m_Messages4User.Count > 0)
             {
                 var msg = m_Messages4User.Dequeue();
-                sslStream.WriteAsync(Encoding.Unicode.GetBytes($"{GetTypeId(msg.type)}|{msg.SenderId}|{msg.ChatId}|{msg.Message}|{msg.MessageId}"));
+                sslStream.WriteAsync(Encoding.Unicode.GetBytes($"{GetTypeId(msg.type)}|{msg.SenderId}|{msg.ChatId}|{msg.Message}|{msg.MessageId}|{msg.MessageTime}"));
+                sslStream.WriteAsync(Encoding.Unicode.GetBytes($"0000"));
                 if (msg.MessageId > m_User.UserLastMessageId) m_User.UserLastMessageId = msg.MessageId;
-            }            
+            }
+            sslStream.WriteAsync(Encoding.Unicode.GetBytes($"0000"));
             m_Msg(MessageType.info, 0, 0, $"Connection: {m_ConnectionNumber} Server: new messages sent");
         }
 

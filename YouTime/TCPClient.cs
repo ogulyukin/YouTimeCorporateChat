@@ -18,14 +18,15 @@ namespace Networking
         private TcpClient m_Connection;
         private SslStream m_SslStream;
         private static Hashtable m_CertificateErrors = new Hashtable();
-        private int m_UserId = 0;
         private Queue<NetworkMessageItem> m_UserMessagesQueue;
         private Queue<NetworkMessageItem> m_ServerMessagesQueue;
+        private DataModelCurrentUser m_User;
 
-        public TCPClient(Queue<NetworkMessageItem> userMessagesQueue, Queue<NetworkMessageItem> serverMessagesQueue)
+        public TCPClient(Queue<NetworkMessageItem> userMessagesQueue, Queue<NetworkMessageItem> serverMessagesQueue, DataModelCurrentUser user)
         {
             m_UserMessagesQueue = userMessagesQueue;
             m_ServerMessagesQueue = serverMessagesQueue;
+            m_User = user;
         }
 
         public void ConnectToServer(Configuration.Config config, string username, string password)
@@ -108,7 +109,10 @@ namespace Networking
                 {
                     var dataArray = data.ToArray();
                     msg = Encoding.Unicode.GetString(dataArray, 0, bytesReceived);
-                    m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.message, Message = $"SERVER:{ msg }", MessageId = 0 });
+                    if (msg != String.Empty && !msg.StartsWith("0000"))
+                    {
+                        ProceedNewMessage(msg);
+                    }
                     data.Clear();
                     bytesReceived = 0;
                 }
@@ -116,6 +120,28 @@ namespace Networking
             CloseConnection();
         }
         
+        private void ProceedNewMessage(string msg)
+        {
+            var newMessage = MessageParser.GetMessageFromString(msg);
+            if (newMessage.type == MessageType.autorisation)
+            {
+                m_User.UserId = newMessage.SenderId;
+                m_User.UserIsConnected = true;
+            }
+            else 
+            {
+                m_ServerMessagesQueue.Enqueue(new()
+                {
+                    ChatId = newMessage.ChatId,
+                    SenderId = newMessage.SenderId,
+                    type = newMessage.type,
+                    Message = newMessage.Message,
+                    MessageId = newMessage.MessageId,
+                    MessageTime = newMessage.MessageTime
+                });
+            }
+        }
+
         private void SendNewMessages()
         {
             while(m_UserMessagesQueue.Count > 0)
@@ -145,6 +171,7 @@ namespace Networking
         private void CloseConnection()
         {
             m_Connection.Close();
+            m_User.UserIsConnected = false;
             m_ServerMessagesQueue.Enqueue(new() { ChatId = 0, SenderId = 0, type = MessageType.warning, Message = "SERVER: Connection to server Closed", MessageId = 0 });
         }
     }

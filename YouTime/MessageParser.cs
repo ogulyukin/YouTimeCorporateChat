@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using ChatClient;
 
-namespace TCPServer
+namespace Networking
 {
-    public static class MessageParse
+    public static class MessageParser
     {
         private static MessageType GetMessageType(string msg)
         {
@@ -26,16 +22,19 @@ namespace TCPServer
             return MessageType.none;
         }
 
-        public static MessageItem GetMessageFromString(string msg)
+        public static NetworkMessageItem GetMessageFromString(string msg)
         {
             var messageContent =  msg.Split('|');
             int.TryParse(messageContent[1], out int sender);
             int.TryParse(messageContent[2], out int chat);
-            var result = new MessageItem() {
+            int.TryParse(messageContent[4], out int msgid);
+            var result = new NetworkMessageItem() {
                 type = GetMessageType(messageContent[0]),
                 SenderId = sender,
                 ChatId = chat,
-                Message = StringChecker(messageContent[3])
+                Message = StringChecker(messageContent[3]),
+                MessageId = msgid,
+                MessageTime = StringChecker(messageContent[5])
             };
             return result;
         }
