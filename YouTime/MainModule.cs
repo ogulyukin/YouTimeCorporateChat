@@ -33,10 +33,11 @@ namespace ChatClient
         private Queue<NetworkMessageItem> m_ServerMessagesQueue;
         private bool m_ConfigSaved = false;
 
-        public MainModule(List<MessageItem> chatMsgs, Updater refreshMsg)
+        public MainModule(List<DataModelContact> contactList, List<MessageItem> chatMsgs, Updater refreshMsg)
         { 
             m_CManager = new(Messager);
-            m_ContactList = DbWorker.getContactList(m_Connection);
+            m_ContactList = contactList;
+            LoadContactsDB();
             m_User = new();
             m_ChatMsgs = chatMsgs;
             LoadMessagesDB();
@@ -61,6 +62,15 @@ namespace ChatClient
             foreach (var it in messagesDB)
             {
                 AddMessageToListBox(it);
+            }
+        }
+
+        private void LoadContactsDB()
+        {
+            var contactsDB = DbWorker.getContactList(m_Connection);
+            foreach (var it in contactsDB)
+            {
+                m_ContactList.Add(it);
             }
         }
 

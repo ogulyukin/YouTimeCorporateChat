@@ -11,13 +11,15 @@ namespace ChatClient
     {
         public delegate void MessageUpdater();
         List<MessageItem> m_ChatMsgs;
+        List<DataModelContact> m_ContactList;
         MainModule m_MainModule;
 
         public MainWindow()
         {
             InitializeComponent();
             m_ChatMsgs = new();
-            m_MainModule = new(m_ChatMsgs, RefreshMessageBox);
+            m_ContactList = new();
+            m_MainModule = new(m_ContactList , m_ChatMsgs, RefreshMessageBox);
             if (!m_MainModule.StartConfigMagager())
             {
                 var dialog = new SettingsDialog("127.0.0.1", "8005");
@@ -52,13 +54,19 @@ namespace ChatClient
             {
                 MyMessageBox.Items.Add(it);
             }
+
+            MyContactBox.Items.Clear();
+            foreach (var it in m_ContactList)
+            {
+                MyContactBox.Items.Add(it);
+            }
         }
                 
         private void NewMessageBlock_LostFocus(object sender, RoutedEventArgs e)
         {
             if(NewMessageBlock.Text == "")
             {
-                NewMessageBlock.Text = "Введите сообщение";
+                NewMessageBlock.Text = "Enter message here";
                 NewMessageBlock.Foreground = Brushes.Gray;
             }
         }
@@ -66,7 +74,7 @@ namespace ChatClient
         private void NewMessageBlock_GotFocus(object sender, RoutedEventArgs e)
         {
             NewMessageBlock.Foreground = Brushes.Black;
-            if (NewMessageBlock.Text == "Введите сообщение")
+            if (NewMessageBlock.Text == "Enter message here")
             {
                 NewMessageBlock.Text = "";
             }
