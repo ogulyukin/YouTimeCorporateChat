@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace TCPServer
+﻿namespace TCPServer
 {
     public class MessageItem
     {

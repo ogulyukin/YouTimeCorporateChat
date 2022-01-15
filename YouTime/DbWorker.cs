@@ -128,7 +128,7 @@ namespace ChatClient
 
             using var db = new SqliteConnection(connection);
             db.Open();
-            //var sql = $"SELECT * FROM 'Message_Tab' WHERE ChatId = {chatId}";
+            //var sql = $"SELECT * FROM 'Message_Tab' WHERE ChatId = {chatId}";// chatId is not used in current version
             var sql = $"SELECT * FROM 'Message_Tab'";
             using var query = new SqliteCommand(sql, db);
             using var res = query.ExecuteReader();

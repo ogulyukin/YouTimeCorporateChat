@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
-using System.Security.Cryptography;
 
 namespace TCPServer
 {
